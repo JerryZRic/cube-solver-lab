@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import Cube from 'cubejs';
-import { applyMove, createCube, cubeToFacelets, FACES, inverseMove, isSolved, parseAlgorithm, parseMove, scramble } from '../src/cube';
+import { applyMove, createCube, cubeToFacelets, FACES, getOrder, inverseMove, isSolved, MAX_ORDER, MIN_ORDER, parseAlgorithm, parseMove, scramble } from '../src/cube';
 
 function seeded(seed: number): () => number {
   return () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; };
@@ -75,5 +75,117 @@ describe('real current-state Kociemba solving', () => {
       expect(isSolved(state)).toBe(true);
       expect(cubeToFacelets(state)).toBe(new Cube().asString());
     }, 30000);
+  }
+});
+
+describe('variable-order exact integer cube model', () => {
+  it('rejects unsupported orders at every public order-taking entry point', () => {
+    expect(MIN_ORDER).toBe(2);
+    expect(MAX_ORDER).toBe(10);
+    for (const invalid of [0, 1, -1, 11, 100, 2.5, NaN, Infinity, -Infinity, '3', null]) {
+      const order = invalid as number;
+      expect(() => createCube(order)).toThrow();
+      expect(() => parseMove('R', order)).toThrow();
+      expect(() => parseAlgorithm('', order)).toThrow();
+      expect(() => scramble(20, Math.random, order)).toThrow();
+    }
+    expect(() => getOrder([])).toThrow();
+  });
+
+  it('parses single-slice depth separately from a half-turn suffix', () => {
+    expect(parseMove('2R2', 4)).toEqual({ face: 'R', axis: 'x', layer: 1, quarters: -2, depth: 2 });
+    expect(parseMove("3L'", 5)).toEqual({ face: 'L', axis: 'x', layer: 0, quarters: -1, depth: 3 });
+    expect(parseMove('10B', 10)).toEqual({ face: 'B', axis: 'z', layer: 9, quarters: 1, depth: 10 });
+    expect(parseAlgorithm("R 2U' 10F2", 10)).toEqual(['R', "2U'", '10F2']);
+    expect(inverseMove("10R'")).toBe('10R');
+    expect(inverseMove('10R')).toBe("10R'");
+    expect(inverseMove('10R2')).toBe('10R2');
+    for (const move of ['0R', '01R', '2.5R', '-2R', '11R', '2Rw', 'R3', '2', 'R 2']) {
+      expect(() => parseMove(move, 10)).toThrow();
+    }
+    expect(() => parseMove('5R', 4)).toThrow();
+    expect(() => applyMove(createCube(2), '3R')).toThrow();
+  });
+
+  for (let order = MIN_ORDER; order <= MAX_ORDER; order++) {
+    it(`${order}×${order}: correct surface cubies, doubled coordinates, facelet count and colors`, () => {
+      const state = createCube(order);
+      expect(getOrder(state)).toBe(order);
+      expect(state).toHaveLength(order ** 3 - (order - 2) ** 3);
+      expect(new Set(state.map(cubie => cubie.id)).size).toBe(state.length);
+      expect(new Set(state.map(cubie => cubie.position.join(','))).size).toBe(state.length);
+      expect(state.flatMap(cubie => cubie.stickers)).toHaveLength(6 * order ** 2);
+      expect(isSolved(state)).toBe(true);
+      expect(cubeToFacelets(state)).toBe(FACES.map(face => face.repeat(order ** 2)).join(''));
+      for (const cubie of state) {
+        expect(cubie.position.every(value => Number.isInteger(value) && (value + order - 1) % 2 === 0)).toBe(true);
+        expect(Math.max(...cubie.position.map(Math.abs))).toBe(order - 1);
+      }
+    });
+
+    it(`${order}×${order}: every face/depth/suffix has fourth power identity and exact inverse`, () => {
+      const original = JSON.stringify(createCube(order));
+      for (let depth = 1; depth <= order; depth++) for (const face of FACES) for (const suffix of ['', "'", '2']) {
+        const move = (depth === 1 ? '' : String(depth)) + face + suffix;
+        const state = createCube(order);
+        const { axis, layer } = parseMove(move, order);
+        const axisNumber = { x: 0, y: 1, z: 2 }[axis];
+        const untouchedBefore = JSON.stringify(state.filter(cubie => cubie.position[axisNumber] !== layer));
+        applyMove(state, move);
+        const untouchedAfter = JSON.stringify(state.filter(cubie => cubie.position[axisNumber] !== layer));
+        expect(untouchedAfter, `${move} must not rotate adjacent slices`).toBe(untouchedBefore);
+        const facelets = cubeToFacelets(state);
+        for (const color of FACES) expect([...facelets].filter(face => face === color)).toHaveLength(order ** 2);
+        for (let i = 1; i < 4; i++) applyMove(state, move);
+        expect(JSON.stringify(state), `${move}^4`).toBe(original);
+        applyMove(state, move);
+        applyMove(state, inverseMove(move));
+        expect(JSON.stringify(state), `${move} followed by its inverse`).toBe(original);
+      }
+    });
+
+    it(`${order}×${order}: far/opposite slice notation gives the same physical turn`, () => {
+      const opposites = { U: 'D', R: 'L', F: 'B', D: 'U', L: 'R', B: 'F' } as const;
+      for (const face of FACES) for (let depth = 1; depth <= order; depth++) {
+        const state = createCube(order);
+        const reference = createCube(order);
+        applyMove(state, `${depth}${face}`);
+        applyMove(reference, `${order + 1 - depth}${opposites[face]}'`);
+        expect(JSON.stringify(state)).toBe(JSON.stringify(reference));
+      }
+    });
+
+    it(`${order}×${order}: random mixed-depth history reverses exactly, with no position drift`, () => {
+      const random = seeded(0xc0ffee + order);
+      const moves = Array.from({ length: 180 }, () => {
+        const face = FACES[Math.floor(random() * FACES.length)];
+        const depth = 1 + Math.floor(random() * order);
+        return (depth === 1 ? '' : String(depth)) + face + ['', "'", '2'][Math.floor(random() * 3)];
+      });
+      const state = createCube(order);
+      moves.forEach(move => applyMove(state, move));
+      expect(getOrder(state)).toBe(order);
+      expect(new Set(state.map(cubie => cubie.position.join(','))).size).toBe(state.length);
+      expect(state.flatMap(cubie => [...cubie.position, ...cubie.stickers.flatMap(sticker => sticker.normal)]).every(Number.isInteger)).toBe(true);
+      expect(cubeToFacelets(state)).toHaveLength(6 * order ** 2);
+      moves.reverse().map(inverseMove).forEach(move => applyMove(state, move));
+      expect(state).toEqual(createCube(order));
+      expect(isSolved(state)).toBe(true);
+    });
+
+    it(`${order}×${order}: generated scramble is valid and non-adjacent-axis`, () => {
+      const moves = scramble(100, seeded(201 + order), order);
+      const state = createCube(order);
+      for (let i = 0; i < moves.length; i++) {
+        const parsed = parseMove(moves[i], order);
+        if (i > 0) expect(parsed.axis).not.toBe(parseMove(moves[i - 1], order).axis);
+        if (order <= 3) expect(parsed.depth).toBe(1);
+        applyMove(state, moves[i]);
+      }
+      if (order >= 4) expect(moves.some(move => parseMove(move, order).depth > 1)).toBe(true);
+      expect(cubeToFacelets(state)).toHaveLength(6 * order ** 2);
+      moves.reverse().map(inverseMove).forEach(move => applyMove(state, move));
+      expect(state).toEqual(createCube(order));
+    });
   }
 });

@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { type Cubie, type Face, type Move, parseMove } from './cube';
+import { type Cubie, type Face, type Move, parseMove, getOrder } from './cube';
 
 export const COLORS: Record<Face, string> = { U: '#f2f1e9', R: '#ec655e', F: '#4dc49b', D: '#f1cc55', L: '#f49d50', B: '#528cdb' };
 export class CubeView {
@@ -63,8 +63,9 @@ export class CubeView {
   home(){this.camera.position.set(6.8,5.5,8.3);this.controls.target.set(0,0,0);this.controls.update();}
   sync(cube:Cubie[]){
     this.root.clear();this.groups.clear();this.stickers=[];
+    this.root.scale.setScalar(3/getOrder(cube));
     for(const cubie of cube){
-      const group=new THREE.Group();group.position.set(...cubie.position);group.add(new THREE.Mesh(this.bodyGeometry,this.bodyMaterial));
+      const group=new THREE.Group();group.position.set(...cubie.position).multiplyScalar(.5);group.add(new THREE.Mesh(this.bodyGeometry,this.bodyMaterial));
       for(const sticker of cubie.stickers){
         const mesh=new THREE.Mesh(this.stickerGeometry,this.materials[sticker.face]);
         const normal=new THREE.Vector3(...sticker.normal);mesh.position.copy(normal).multiplyScalar(.487);mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),normal);
@@ -75,7 +76,7 @@ export class CubeView {
     }
   }
   animate(cube:Cubie[],move:Move,duration:number):Promise<boolean>{
-    const {axis,layer,quarters}=parseMove(move);const index={x:0,y:1,z:2}[axis];const pivot=new THREE.Group();this.root.add(pivot);
+    const {axis,layer,quarters}=parseMove(move,getOrder(cube));const index={x:0,y:1,z:2}[axis];const pivot=new THREE.Group();this.root.add(pivot);
     for(const c of cube)if(c.position[index]===layer)pivot.add(this.groups.get(c.id)!);
     return new Promise(resolve=>{this.transition={start:performance.now(),duration,pivot,axis,target:quarters*Math.PI/2,resolve};});
   }
