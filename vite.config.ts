@@ -1,0 +1,5 @@
+import { defineConfig } from 'vite';
+export default defineConfig({
+  optimizeDeps: { include: ['cubejs'] },
+  build: { commonjsOptions: { include: [/node_modules/, /vendor\/cubejs/] } },
+});
