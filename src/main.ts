@@ -8,13 +8,13 @@ const icon=(name:string)=>`<svg width="18" height="18" viewBox="0 0 24 24" fill=
 const faceNames:Record<Face,string>={U:'上',R:'右',F:'前',D:'下',L:'左',B:'后'};
 const faces:Face[]=['U','R','F','D','L','B'];
 document.querySelector<HTMLDivElement>('#app')!.innerHTML=`
-<header class="topbar"><a class="brand" href="./" aria-label="Cube Lab 首页"><img src="/favicon.svg" alt=""/><span>CUBE<span class="brand-light">LAB</span></span><span class="brand-cn">魔方实验室</span></a><div class="header-right"><span class="lab-tag"><span></span> 研究原型 v0.2</span><span class="stack-label">N × N · THREE.JS</span></div></header>
+<header class="topbar"><a class="brand" href="./" aria-label="Cube Lab 首页"><img src="./favicon.svg" alt=""/><span>CUBE<span class="brand-light">LAB</span></span><span class="brand-cn">魔方实验室</span></a><div class="header-right"><span class="lab-tag"><span></span> 研究原型 v0.3</span><span class="stack-label">N × N · THREE.JS</span></div></header>
 <main><section class="intro"><div><p class="eyebrow">EXPLORE · SCRAMBLE · SOLVE</p><h1>让每一步，<span>都看得见。</span></h1><p class="intro-text">一个魔方，千万种可能。从打乱到复原，探索三维空间里的秩序。</p></div><div class="intro-note"><span class="dot"></span> <b id="order-display">3 × 3 × 3</b><span>浏览器本地计算 · 无需上传</span></div></section>
 <section class="configuration-panel" aria-label="魔方阶数设置"><div class="config-title"><span class="eyebrow">DIMENSIONS</span><h2>选择你的维度</h2></div><div class="order-presets" aria-label="预设阶数">${[2,3,4,5].map(n=>`<button data-order="${n}" aria-pressed="${n===3}"><b>${n}</b><span>阶</span></button>`).join('')}</div><form id="custom-order-form" class="custom-order" novalidate><label for="custom-order">自定义</label><input id="custom-order" type="number" min="2" max="10" step="1" value="3" inputmode="numeric" aria-describedby="order-hint order-error"/><span>阶</span><button class="quiet-button" type="submit">应用</button></form><p id="order-hint" class="order-hint">支持 2–10 阶；切换会清空状态与回放<br/>高阶更耗性能，手机建议先试 2–5 阶</p><p id="order-error" class="order-error" role="alert" hidden></p></section><div class="workspace"><section class="stage-panel" aria-label="三维魔方交互区"><div class="stage-top"><div class="status-pill" id="cube-status"><span></span> 已复原</div><div class="view-actions"><button id="turn-mode" class="quiet-button" aria-pressed="false" title="启用后点按色块可顺时针旋转对应面">点按转面</button><button id="view-home" class="icon-button" title="重置观察视角" aria-label="重置观察视角">${icon('home')}</button></div></div><div class="stage-watermark" id="stage-watermark" aria-hidden="true">3³</div><div id="viewport" aria-label="可用鼠标拖动观察的多阶魔方"></div><div class="stage-bottom"><span class="orbit-hint"><span class="mouse-icon"></span><span id="interaction-hint">拖动旋转视角<span class="hint-sep">·</span>滚轮缩放</span></span><span class="axis-hint"><b style="color:var(--green)">F</b> 前 <b style="color:var(--red)">R</b> 右 <b style="color:#efeee6">U</b> 上</span></div><div class="webgl-error" id="webgl-error" hidden><strong>此浏览器无法启动 WebGL</strong><p>请开启硬件加速，或使用新版 Chrome / Safari / Edge。二维状态与求解仍可使用。</p></div></section>
 <aside class="control-panel"><section class="control-section"><div class="section-heading"><span class="section-index">01</span><h2>开始探索</h2><span class="tiny-label">EXPERIMENT</span></div><div class="primary-actions"><button id="scramble" class="button secondary">${icon('shuffle')} 随机打乱</button><button id="reset" class="button ghost">${icon('reset')} 复原</button></div><div class="turn-heading"><span>手动转动</span><div class="direction-toggle" aria-label="转动方向"><button id="clockwise" aria-pressed="true">顺时针</button><button id="counter" aria-pressed="false">逆时针 ′</button></div></div><div class="layer-control"><label for="layer">转动层</label><select id="layer" aria-label="转动层"><option value="1">外层 · 第 1 层</option></select><span id="layer-hint">从所选面向内计数</span></div><div class="face-buttons">${faces.map(f=>`<button class="face-button" data-face="${f}" aria-label="旋转${faceNames[f]}面 ${f}"><i style="background:${COLORS[f]}"></i><b>${f}</b><span>${faceNames[f]}</span></button>`).join('')}</div><p class="micro-hint">键盘 U R F D L B 转面，按住 Shift 反向</p><button id="solve" class="button solve-button">${icon('spark')} <span>计算复原步骤</span> ${icon('arrow')}</button><p class="solver-note" id="solver-note">两阶段算法 · 直接求解当前状态，非倒放打乱记录</p></section>
 <section class="control-section solution-section"><div class="section-heading"><span class="section-index">02</span><h2 id="playback-title">求解回放</h2><span class="move-count" id="move-count">— 步</span></div><div id="solution-empty" class="solution-empty"><div class="empty-cube">${icon('spark')}</div><p>从混乱中，找到秩序</p><span id="empty-caption">先打乱魔方，再计算一条复原路径</span></div><div id="solution-content" hidden><div class="playback-progress"><span id="progress-label">0 / 0</span><span id="next-label">准备开始</span></div><div class="progress-track"><div id="progress-fill"></div></div><div class="notation" id="notation" aria-label="求解步骤"></div></div><div class="playback-controls"><button id="step-back" class="icon-button" title="上一步" aria-label="上一步">${icon('prev')}</button><button id="play" class="button play-button">${icon('play')} 播放</button><button id="step-next" class="icon-button" title="下一步" aria-label="下一步">${icon('next')}</button><label class="speed-label" for="speed">速度<select id="speed" aria-label="播放速度"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="1.5">1.5×</option><option value="2">2×</option><option value="3">3×</option></select></label></div><p class="live-message" id="message" role="status" aria-live="polite">准备好了，试着转动一面吧。</p></section></aside>
 <section class="bottom-panel"><div class="net-heading"><p class="eyebrow">LIVE STATE</p><h2>展开来看</h2><p>与 3D 状态实时同步</p></div><div id="cube-net" class="cube-net" aria-label="魔方六面展开图">${faces.map(f=>`<div class="net-face net-${f}" data-net="${f}" aria-label="${faceNames[f]}面"><span>${f}</span><div>${Array(9).fill('<i></i>').join('')}</div></div>`).join('')}</div><div class="last-alg"><span class="tiny-label">最近一次打乱</span><p id="scramble-text">尚未打乱。试试右侧的随机打乱。</p><span class="notation-help">2R = 从右侧数第 2 层（非宽转）<br/>R = 右面顺时针 90° <b>·</b> R′ = 逆时针 <b>·</b> R2 = 180°<br/>方向均以正对该面观察为准</span></div></section></div>
-<footer><span>一个关于空间、逻辑与秩序的小实验。</span><span>Three.js + TypeScript <i>／</i> 2–10 Research Prototype</span></footer></main>`;
+<footer><span>一个关于空间、逻辑与秩序的小实验。 <a href="./source/cube-lab-source.tar.gz" download>源码</a> · <a href="./LICENSE.txt">GPLv3 许可</a></span><span>Three.js + TypeScript <i>／</i> 2–10 Research Prototype</span></footer></main>`;
 const $=<T extends HTMLElement=HTMLElement>(id:string)=>document.getElementById(id) as T;
 const session=new CubeSession(3);
 let view:CubeView|null=null;
@@ -24,7 +24,7 @@ let solution:Move[]=[],cursor=0,speed=1;
 let worker:Worker|null=null, solveToken:{epoch:number,id:number}|null=null;
 let solverTimer:ReturnType<typeof setTimeout>|undefined;
 const message=(value:string)=>{$('message').textContent=value;};
-const trueSolver=()=>session.order===3;
+const trueSolver=()=>session.order>=2&&session.order<=5;
 function clearSolution(){solution=[];cursor=0;playing=false;}
 function selectedMove(face:Face, reverse=inverse):Move{return `${depth===1?'':depth}${face}${reverse?"'":''}`;}
 function renderFaces(){
@@ -42,7 +42,7 @@ function renderOrder(){
   $('cube-net').innerHTML=faces.map(f=>`<div class="net-face net-${f}" data-net="${f}" aria-label="${faceNames[f]}面"><span>${f}</span><div>${Array(n*n).fill('<i></i>').join('')}</div></div>`).join('');
   $('playback-title').textContent=trueSolver()?'求解回放':'历史逆序回放';
   $('empty-caption').textContent=trueSolver()?'先打乱魔方，再计算一条复原路径':'记录所有操作，再按历史逆序返回复原状态';
-  $('solver-note').textContent=trueSolver()?'三阶独立求解 · 直接计算当前状态，非倒放记录':`${n} 阶未接入独立求解器 · 仅撤销本页完整历史（含手动操作）`;
+  $('solver-note').textContent=trueSolver()?`${n===2?'二阶角块映射':n===3?'三阶两阶段':'WASM 降阶算法'} · 独立计算当前状态，非倒放记录；非最短解${n>=4?'，可能数百至上千步':''}`:`${n} 阶未接入独立求解器 · 仅撤销本页完整历史（含手动操作）`;
   renderFaces();
 }
 function redraw(){
@@ -81,7 +81,7 @@ function makeWorker(){
     const data=event.data;if(worker!==instance||!solveToken||data.id!==solveToken.id||!session.acceptsRequest(solveToken)||!solving||!trueSolver())return;
     clearTimeout(solverTimer);solving=false;
     if(data.error){message(`求解失败：${data.error}。请重试或复原。`);redraw();return;}
-    try{const moves=parseAlgorithm(data.algorithm||'',3);const check=structuredClone(session.cube);moves.forEach(m=>applyMove(check,m));if(!isSolved(check))throw new Error('结果校验未通过');solution=moves;cursor=0;message(`找到 ${moves.length} 步独立求解路径。点击播放，或逐步观察。`);}
+    try{const moves=parseAlgorithm(data.algorithm||'',session.order);const check=structuredClone(session.cube);moves.forEach(m=>applyMove(check,m));if(!isSolved(check))throw new Error('结果校验未通过');solution=moves;cursor=0;message(`找到 ${moves.length} 步独立求解路径。点击播放，或逐步观察。`);}
     catch{message('求解结果校验未通过，请重试。');clearSolution();}redraw();
   };
   instance.onerror=()=>{if(worker!==instance||!solving)return;clearTimeout(solverTimer);solving=false;instance.terminate();worker=null;message('求解器加载失败，可重新点击计算。');redraw();};
@@ -92,7 +92,7 @@ function resetState(order=session.order){
   session.reset(order);clearTimeout(solverTimer);solveToken=null;
   if(solving){worker?.terminate();worker=null;}view?.abort();clearSolution();busy=false;solving=false;depth=1;
   view?.sync(session.cube);$('scramble-text').textContent='尚未打乱。试试右侧的随机打乱。';$('order-error').hidden=true;
-  renderOrder();message(changed?`已切换为 ${order} 阶，旧状态、动画与回放已清空。${order===3?'支持独立求解。':'此阶数仅支持操作历史逆序复原。'}`:'已复原。所有转动和待返回的求解结果已取消。');redraw();
+  renderOrder();message(changed?`已切换为 ${order} 阶，旧状态、动画与回放已清空。${trueSolver()?'支持独立求解（非最短解）。':'此阶数仅支持操作历史逆序复原。'}`:'已复原。所有转动和待返回的求解结果已取消。');redraw();
 }
 document.querySelectorAll<HTMLButtonElement>('[data-order]').forEach(b=>b.onclick=()=>{if(Number(b.dataset.order)!==session.order)resetState(Number(b.dataset.order));});
 $('custom-order-form').onsubmit=e=>{
@@ -116,8 +116,8 @@ $('solve').onclick=()=>{
     if(!moves.length||!isSolved(check)){message('当前历史不足以复原，请使用“复原”重置。');redraw();return;}
     solution=moves;message(`生成 ${moves.length} 步历史逆序路径（含手动转动）；这不是独立求解。`);redraw();return;
   }
-  solving=true;const token=session.beginRequest();solveToken=token;message('正在从当前三阶状态计算…首次需初始化求解表。');redraw();
-  try{if(!worker)makeWorker();worker!.postMessage({id:token.id,facelets:cubeToFacelets(session.cube)});}
+  solving=true;const token=session.beginRequest();solveToken=token;message(`正在从当前 ${session.order} 阶状态计算…首次需初始化求解表。${session.order>=4?'可用“复原”或切换阶数取消；最多等待 45 秒。':''}`);redraw();
+  try{if(!worker)makeWorker();worker!.postMessage({id:token.id,order:session.order,facelets:cubeToFacelets(session.cube)});}
   catch{solving=false;worker=null;message('浏览器无法启动求解线程，请重试。');redraw();return;}
   solverTimer=setTimeout(()=>{if(!session.acceptsRequest(token)||!solving)return;worker?.terminate();worker=null;solving=false;message('此次计算超时，请重新计算。');redraw();},45000);
 };

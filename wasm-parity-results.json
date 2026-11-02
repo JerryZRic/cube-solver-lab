@@ -1,0 +1,21 @@
+{
+  "abiChecks": 162,
+  "results": [
+    {
+      "name": "4-PLL-parity",
+      "n": 4,
+      "ok": true,
+      "elapsedMs": 3692,
+      "steps": 108,
+      "winner": "reduction"
+    },
+    {
+      "name": "4-OLL-parity",
+      "n": 4,
+      "ok": true,
+      "elapsedMs": 4596,
+      "steps": 326,
+      "winner": "reduction"
+    }
+  ]
+}

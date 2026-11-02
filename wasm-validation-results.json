@@ -1,0 +1,189 @@
+{
+  "abiChecks": 162,
+  "results": [
+    {
+      "name": "4-single-inner",
+      "n": 4,
+      "ok": true,
+      "elapsedMs": 3228,
+      "steps": 372,
+      "winner": "reduction"
+    },
+    {
+      "name": "4-all-axis-inner",
+      "n": 4,
+      "ok": true,
+      "elapsedMs": 1924,
+      "steps": 506,
+      "winner": "reduction"
+    },
+    {
+      "name": "4-whole-rotation",
+      "n": 4,
+      "ok": true,
+      "elapsedMs": 2536,
+      "steps": 515,
+      "winner": "reduction"
+    },
+    {
+      "name": "4-random-1",
+      "n": 4,
+      "ok": true,
+      "elapsedMs": 1906,
+      "steps": 643,
+      "winner": "reduction"
+    },
+    {
+      "name": "4-random-2",
+      "n": 4,
+      "ok": true,
+      "elapsedMs": 2267,
+      "steps": 519,
+      "winner": "reduction"
+    },
+    {
+      "name": "4-random-3",
+      "n": 4,
+      "ok": true,
+      "elapsedMs": 2007,
+      "steps": 580,
+      "winner": "reduction"
+    },
+    {
+      "name": "4-random-4",
+      "n": 4,
+      "ok": true,
+      "elapsedMs": 2806,
+      "steps": 468,
+      "winner": "reduction"
+    },
+    {
+      "name": "4-random-5",
+      "n": 4,
+      "ok": true,
+      "elapsedMs": 1942,
+      "steps": 568,
+      "winner": "reduction"
+    },
+    {
+      "name": "4-random-6",
+      "n": 4,
+      "ok": true,
+      "elapsedMs": 2768,
+      "steps": 494,
+      "winner": "reduction"
+    },
+    {
+      "name": "4-random-7",
+      "n": 4,
+      "ok": true,
+      "elapsedMs": 2606,
+      "steps": 551,
+      "winner": "reduction"
+    },
+    {
+      "name": "4-random-8",
+      "n": 4,
+      "ok": true,
+      "elapsedMs": 2901,
+      "steps": 732,
+      "winner": "reduction"
+    },
+    {
+      "name": "5-single-inner",
+      "n": 5,
+      "ok": true,
+      "elapsedMs": 4637,
+      "steps": 641,
+      "winner": "reduction"
+    },
+    {
+      "name": "5-all-axis-inner",
+      "n": 5,
+      "ok": true,
+      "elapsedMs": 3056,
+      "steps": 867,
+      "winner": "reduction"
+    },
+    {
+      "name": "5-whole-rotation",
+      "n": 5,
+      "ok": true,
+      "elapsedMs": 2803,
+      "steps": 5,
+      "winner": "reduction"
+    },
+    {
+      "name": "5-fixed-centers",
+      "n": 5,
+      "ok": true,
+      "elapsedMs": 3132,
+      "steps": 872,
+      "winner": "reduction"
+    },
+    {
+      "name": "5-random-1",
+      "n": 5,
+      "ok": true,
+      "elapsedMs": 4272,
+      "steps": 932,
+      "winner": "reduction"
+    },
+    {
+      "name": "5-random-2",
+      "n": 5,
+      "ok": true,
+      "elapsedMs": 2928,
+      "steps": 898,
+      "winner": "reduction"
+    },
+    {
+      "name": "5-random-3",
+      "n": 5,
+      "ok": true,
+      "elapsedMs": 5675,
+      "steps": 1549,
+      "winner": "reduction"
+    },
+    {
+      "name": "5-random-4",
+      "n": 5,
+      "ok": true,
+      "elapsedMs": 4673,
+      "steps": 1172,
+      "winner": "reduction"
+    },
+    {
+      "name": "5-random-5",
+      "n": 5,
+      "ok": true,
+      "elapsedMs": 4035,
+      "steps": 844,
+      "winner": "reduction"
+    },
+    {
+      "name": "5-random-6",
+      "n": 5,
+      "ok": true,
+      "elapsedMs": 4014,
+      "steps": 925,
+      "winner": "reduction"
+    },
+    {
+      "name": "5-random-7",
+      "n": 5,
+      "ok": true,
+      "elapsedMs": 4498,
+      "steps": 1363,
+      "winner": "reduction"
+    },
+    {
+      "name": "5-random-8",
+      "n": 5,
+      "ok": true,
+      "elapsedMs": 3511,
+      "steps": 995,
+      "winner": "reduction"
+    }
+  ]
+}

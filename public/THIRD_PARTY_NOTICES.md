@@ -56,3 +56,25 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
+
+## Cube-Solver / WebAssembly reduction solver
+
+Copyright and attribution: AdamNolle and the Cube-Solver contributors.
+Source: https://github.com/AdamNolle/Cube-Solver
+Revision: 4f04c32e283a8c7cda838d8e01a9b09114227628
+License: GPL-3.0-only; full license at LICENSE (served as LICENSE.txt).
+
+Unmodified upstream Rust workspace source is included in vendor/cube-solver.
+WASM/JavaScript bindings were generated locally; build instructions and tool
+versions are in vendor/cube-solver/UPSTREAM.md and scripts/build-wasm.sh.
+The combined prototype is distributed under GPL-3.0-only; original MIT notices
+for Three.js and cubejs remain applicable. No warranty is provided.
+A matching project source archive is linked in the site footer, including the
+integration, upstream source, manifests, lockfiles and build instructions.
+Corresponding source is publicly available in the GPL-3.0-only GitHub repository
+and the matching source archive linked from the GitHub Pages site.
+
+Rust dependency versions are fixed in vendor/cube-solver/Cargo.lock. Exact source
+and license/copyright notices for the 37 registry crates in the WASM normal/build
+dependency graph are included in vendor/rust-dependencies, with provenance and
+per-file SHA256SUMS. They retain their original licenses.

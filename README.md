@@ -1,10 +1,16 @@
 # Cube Lab · 多阶魔方实验室
 
-独立、中文、浏览器内运行的 **2–10 阶** 魔方研究原型。使用 Three.js + TypeScript + Vite；**只有 3 阶接入 cubejs/Kociemba 独立求解器**。
+独立、中文、浏览器内运行的 **2–10 阶** 魔方研究原型。使用 Three.js + TypeScript + Vite；**2–5 阶支持从当前贴纸状态独立求解**。
 
-私有测试入口：https://jerry-cube-solver-lab.shtw.chatgpt.site （需使用拥有该预览权限的 ChatGPT 账号登录）
+> v0.3：2 / 3 阶使用 cubejs/Kociemba；4 / 5 阶使用浏览器 WASM 降阶求解；6–10 阶仅历史逆序。全部计算在本机浏览器完成。
 
-## v0.2：直接设置阶数
+公开源码：https://github.com/JerryZRic/cube-solver-lab
+
+GitHub Pages：https://jerryzric.github.io/cube-solver-lab/
+
+原有个人 Sites 测试页保持私有；GitHub Pages 独立公开发布。
+
+## 直接设置阶数
 
 - 一键选择 **2 / 3 / 4 / 5 阶**，或输入 **2–10 的整数**后点“应用”。
 - 实际生成对应的 NxN 块、贴纸、转动层和六面展开图，不是仅改变外观。
@@ -18,8 +24,9 @@
 
 | 阶数 | 当前提供 | 不应误解为 |
 | --- | --- | --- |
-| **3 阶** | 从当前合法状态独立求解；打乱后继续手动转动也能求解 | 倒放打乱记录或最优解保证 |
-| **2、4–10 阶** | 将本页所有已完成操作（打乱、手动、已播放步骤）按历史逆序复原 | 任意输入状态的独立 NxN 求解器 |
+| **2 / 3 阶** | 从当前合法状态独立求解；二阶角块映射到合法虚拟三阶，再投射外层解 | 倒放打乱记录或最优解保证 |
+| **4 / 5 阶** | WASM 降阶求解当前合法状态；不读取历史，结果经过独立模型复核 | 最短解、逐层教学或任意非法状态判定 |
+| **6–10 阶** | 将本页所有已完成操作（打乱、手动、已播放步骤）按历史逆序复原 | 任意输入状态的独立 NxN 求解器 |
 
 历史路径可暂停、逐步前进/后退、调速。中途手动编辑后会重新记录正确历史。已恢复为同色六面时可作为新的历史基线。没有导入外部颜色状态功能，因此该原型中的合法状态均可沿记录返回。
 
@@ -51,19 +58,25 @@ npm run preview
 - `src/cube.ts`：精确整数坐标。坐标按两倍网格编码，让偶数阶也只用整数；几何动画浮点值绝不写回逻辑状态。
 - `src/view.ts`：Three.js 圆角块与贴纸、OrbitControls；坐标映射到视图并按阶数归一化缩放，每次转动结束归回精确模型。
 - `src/session.ts`：状态、完整转动历史、世代与请求编号；拒绝切阶前的迟到转动/求解结果。
-- `src/solver.worker.ts`：**仅三阶** Kociemba 两阶段算法；验证排列、翻转、扭转、奇偶及最终解法。
-- `src/main.ts`：阶数与深度设置、输入互斥、回放控制、非三阶历史逆序路径。
-- `tests/`：NxN 不变量、三阶独立求解回归、会话竞态与渲染数学检查。
+- `src/small-solver.ts`：二阶角块映射和三阶 Kociemba 两阶段求解；验证排列、翻转、扭转、奇偶及最终解法。
+- `src/reduction-solver.ts` / `src/reduction-adapter.ts`：WASM 初始化、贴纸/单层动作转换、资源释放。
+- `src/solver.worker.ts`：接收当前贴纸状态与阶数（不接收历史），隔离求解计算。
+- `src/main.ts`：阶数与深度设置、输入互斥、回放控制、未接入阶数的历史逆序路径。
+- `tests/`：NxN 不变量、二阶独立状态验证、三阶求解回归、会话竞态与渲染数学检查。
 
 ## 研究范围与限制
 
 - 自定义范围 2–10 阶；没有任意阶数无限支持、拍照识别或手动颜色录入。
 - 打乱为随机合法转动序列，**不是 WCA 比赛随机状态打乱**。
-- 三阶两阶段算法返回可行解，**不保证最少步数**，也不是逐层教学解法；首次工作线程初始化通常需数秒，45 秒超时后可重试。
-- **2 阶与 4–10 阶尚无独立求解器**；历史逆序复原在 UI 和文档中明确标识。
+- 二阶通过虚拟三阶角块映射得到可行长解，不是专用最短二阶解法；三阶两阶段算法同样返回可行解，**不保证最少步数**，也不是逐层教学解法；首次工作线程初始化通常需数秒，45 秒超时后可重试。
+- **4 / 5 阶返回的解可能有数百至上千步**，适合验证求解流程，不宜作为速拧或最短解工具。45 秒硬超时，复原/切阶会终止线程；慢设备可能超时。6–10 阶仅历史逆序，界面明确标识。
 - 云端验证浏览器禁用 WebGL；UI/求解/历史回放在二维降级模式实测，渲染的场景几何与转层选择通过数学测试，未宣称 GPU 像素、移动触控或跨浏览器完整认证。详见 QA.md。
-- 独立个人试用项目；不部署 timewish.net，不涉及其他游戏项目或 Windows 打包。
+- 独立开源研究项目；不部署 timewish.net，不涉及其他游戏项目或 Windows 打包。
 
 ## 许可
 
-Three.js、cubejs 使用 MIT 许可，见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)，发布包亦包含。cubejs 1.3.2 原始运行时代码按原样保留于 `vendor/cubejs/`，仅去除上游未使用的旧 npm CLI 依赖树；来源和校验和见该目录 UPSTREAM.md。依赖固定在 `package-lock.json`。
+组合原型按 **GPL-3.0-only** 分发，完整许可见 LICENSE。四/五阶求解器来自 AdamNolle/Cube-Solver 固定提交 `4f04c32e283a8c7cda838d8e01a9b09114227628`，原始 Rust 源码位于 `vendor/cube-solver/`。重建说明见该目录 UPSTREAM.md 与 `scripts/build-wasm.sh`。页面底部提供匹配源码包；`python3 scripts/package-source.py` 可重新生成。Three.js、cubejs 使用 MIT 许可，见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)，发布包亦包含。cubejs 1.3.2 原始运行时代码按原样保留于 `vendor/cubejs/`，仅去除上游未使用的旧 npm CLI 依赖树；来源和校验和见该目录 UPSTREAM.md。依赖固定在 `package-lock.json`。
+
+## GitHub Pages 发布
+
+`npm run build` 后将 `dist/` 内容复制至 `docs/` 并保留 `docs/.nojekyll`。Pages 从 main 分支的 /docs 发布。资源使用相对路径，Worker/WASM 在项目子路径下同源加载。更新源码后先运行测试、重新生成匹配源码包，再构建并更新 docs。
